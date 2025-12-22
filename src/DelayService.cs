@@ -7,6 +7,7 @@ internal sealed class DelayService : IDisposable
 {
     private readonly DebuggerService _debugger;
     private readonly TimeSpan _delay;
+    private readonly bool _resetDelayOnRequest;
 
     private readonly ConcurrentDictionary<NodeKey, Tuple<Timer, ConcurrentBag<string>>> _timers = new(); //id+parentId, (timer, additionalInfoBag)
 
@@ -14,6 +15,7 @@ internal sealed class DelayService : IDisposable
     {
         _debugger = debugger;
         _delay = options.Value.RefreshDelay ?? TimeSpan.FromSeconds(5);
+        _resetDelayOnRequest = options.Value.ResetDelayOnRequest;
         
         _debugger.WriteInfo("DelayService initialized.");
         if (_debugger.IsDebugMode)
@@ -45,12 +47,20 @@ internal sealed class DelayService : IDisposable
             },
             (_, existingTimer) => //reset timer
             {
-                existingTimer.Item1.Change(_delay, Timeout.InfiniteTimeSpan);
+                if (_resetDelayOnRequest)
+                {
+                    existingTimer.Item1.Change(_delay, Timeout.InfiniteTimeSpan);
+                    _debugger.WriteDebug($"Delay timer reset for ID {key.Id} with parent ID {key.ParentId}.");
+                }
+                else
+                {
+                    _debugger.WriteDebug($"Delay timer hit for ID {key.Id} with parent ID {key.ParentId}.");
+                }
                 if (additionalInfo != null)
                 {
                     existingTimer.Item2.Add(additionalInfo);
                 }
-                _debugger.WriteDebug($"Delay timer reset for ID {key.Id} with parent ID {key.ParentId}.");
+                
                 return existingTimer;
             });
     }
