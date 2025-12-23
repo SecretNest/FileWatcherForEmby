@@ -13,7 +13,7 @@ internal sealed class LibraryPathMatcherService
     {
         _cachedEmbyLibrariesService = cachedEmbyLibrariesService;
         _debugger = debugger;
-        if (options.Value.CaseSensitive)
+        if (options.Value.SourcePathCaseSensitive)
         {
             _comparison = StringComparison.Ordinal;
             _pathMappings = new Dictionary<string, List<string>>(
@@ -44,7 +44,7 @@ internal sealed class LibraryPathMatcherService
             {
                 sb.AppendLine($"    \"{mapping.Key}\" => [{string.Join(", ", mapping.Value.Select(i => $"\"{i}\""))}]");
             }
-            sb.AppendLine($"  CaseSensitive: {options.Value.CaseSensitive}");
+            sb.AppendLine($"  SourcePathCaseSensitive: {options.Value.SourcePathCaseSensitive}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }

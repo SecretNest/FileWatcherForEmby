@@ -4,7 +4,7 @@ internal sealed class PathMatcherOptions
 {
     public required List<PathMapping> PathMappings { get; set; }
     
-    public bool CaseSensitive { get; set; }
+    public bool SourcePathCaseSensitive { get; set; }
 
     internal sealed class PathMapping
     {

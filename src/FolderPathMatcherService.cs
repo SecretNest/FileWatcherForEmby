@@ -12,14 +12,14 @@ internal sealed class FolderPathMatcherService
     {
         _cachedEmbyItemsService = cachedEmbyItemsService;
         _debugger = debugger;
-        _comparison = options.Value.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        _comparison = options.Value.SourcePathCaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
         
         _debugger.WriteInfo("FolderPathMatcher initialized.");
         if (_debugger.IsDebugMode)
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("FolderPathMatcher configuration:");
-            sb.AppendLine($"  CaseSensitive: {options.Value.CaseSensitive}");
+            sb.AppendLine($"  SourcePathCaseSensitive: {options.Value.SourcePathCaseSensitive}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }

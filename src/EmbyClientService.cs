@@ -6,7 +6,7 @@ namespace SecretNest.FileWatcherForEmby;
 internal sealed class EmbyClientService
 {
     private readonly DebuggerService _debugger;
-    private readonly bool _pathIgnoreCase;
+    private readonly bool _pathCaseSensitive;
     private readonly string _urlGetVirtualFolders;
     private readonly string _urlGetItemsFormat;
     private readonly string _urlRefreshFormat;
@@ -14,7 +14,7 @@ internal sealed class EmbyClientService
     public EmbyClientService(IOptions<EmbyClientOptions> options, DebuggerService debugger)
     {
         _debugger = debugger;
-        _pathIgnoreCase = options.Value.PathIgnoreCase;
+        _pathCaseSensitive = options.Value.EmbyEnvironmentPathCaseSensitive;
         var embyBaseUrl = options.Value.EmbyBaseUrl.EndsWith("/") 
             ? options.Value.EmbyBaseUrl
             : options.Value.EmbyBaseUrl + "/";
@@ -29,7 +29,8 @@ internal sealed class EmbyClientService
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("EmbyClient configuration:");
             sb.AppendLine($"  EmbyBaseUrl: {embyBaseUrl}");
-            sb.AppendLine($"  PathIgnoreCase: {_pathIgnoreCase}");
+            sb.AppendLine($"  EmbyApiKey: {options.Value.EmbyApiKey}");
+            sb.AppendLine($"  EmbyEnvironmentPathCaseSensitive: {_pathCaseSensitive}");
             sb.AppendLine($"  URL GetVirtualFolders: {_urlGetVirtualFolders}");
             sb.AppendLine($"  URL GetItemsFormat: {_urlGetItemsFormat}");
             sb.AppendLine($"  URL RefreshFormat: {_urlRefreshFormat}");
@@ -64,7 +65,7 @@ internal sealed class EmbyClientService
         var json = JsonDocument.Parse(content).RootElement;
         _debugger.WriteInfo("EmbyClient: Successfully retrieved libraries.");
         
-        var locationsAndIds = new Dictionary<string, List<int>>(_pathIgnoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        var locationsAndIds = new Dictionary<string, List<int>>(_pathCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase);
         
         foreach (var libraryElement in json.EnumerateArray())
         {
