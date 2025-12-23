@@ -118,7 +118,7 @@ internal class Program
             //Tell user how to run as service
             Console.WriteLine("To run this application as a Windows Service, use the following command:");
             var fileName = Path.GetFileName(System.Diagnostics.Process.GetCurrentProcess().MainModule!.FileName);
-            Console.WriteLine($"  To install as service:\t{fileName} install");
+            Console.WriteLine($"  To install service:\t{fileName} install");
             Console.WriteLine($"  To uninstall service:\t{fileName} uninstall");
             Console.WriteLine($"  To start service:\t{fileName} start");
             Console.WriteLine($"  To stop service:\t{fileName} stop");
