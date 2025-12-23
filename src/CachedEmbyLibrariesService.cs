@@ -23,7 +23,7 @@ internal sealed class CachedEmbyLibrariesService
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("CachedEmbyLibraries configuration:");
             sb.AppendLine($"  CacheDurationInSeconds: {options.Value.CacheDurationInSeconds}");
-            sb.AppendLine($"  ServicingClass: {_cachedEmbyClient.GetType().Name}");
+            sb.Append($"  ServicingClass: {_cachedEmbyClient.GetType().Name}");
             debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }

@@ -19,7 +19,7 @@ internal sealed class FolderPathMatcherService
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("FolderPathMatcher configuration:");
-            sb.AppendLine($"  SourcePathCaseSensitive: {options.Value.SourcePathCaseSensitive}");
+            sb.Append($"  SourcePathCaseSensitive: {options.Value.SourcePathCaseSensitive}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }

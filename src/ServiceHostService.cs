@@ -21,7 +21,9 @@ internal sealed class ServiceHostService(
         delayService.DelayElapsed += OnDelayElapsed;
         folderWatcherService.Start();
         debugger.WriteDebug("ServiceHostService: started.");
-        
+
+        debugger.WriteInfo("Service started. Press Ctrl+C to shut down.");
+
         var tcs = new TaskCompletionSource<object?>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         

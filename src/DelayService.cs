@@ -23,6 +23,7 @@ internal sealed class DelayService : IDisposable
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("DelayService configuration:");
             sb.AppendLine($"  RefreshDelay: {_delay}");
+            sb.Append($"  ResetDelayOnRequest: {_resetDelayOnRequest}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }

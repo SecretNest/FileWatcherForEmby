@@ -55,7 +55,7 @@ internal sealed class CachedEmbyItemsService : IDisposable
             sb.AppendLine($"  Cache TrackLinkedCacheEntries: {cacheOptions.Value.TrackLinkedCacheEntries}");
             sb.AppendLine($"  Cache TrackStatistics: {cacheOptions.Value.TrackStatistics}");
             sb.AppendLine($"  Entry AbsoluteExpirationRelativeToNow: {_entryOptions.AbsoluteExpirationRelativeToNow}");
-            sb.AppendLine($"  Entry SlidingExpiration: {_entryOptions.SlidingExpiration}");
+            sb.Append($"  Entry SlidingExpiration: {_entryOptions.SlidingExpiration}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }

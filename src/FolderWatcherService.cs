@@ -37,10 +37,7 @@ internal sealed class FolderWatcherService : IDisposable
                 sb.AppendLine("FolderWatcherService configuration:");
                 sb.AppendLine($"  RetryDelay: {options.Value.RetryDelay}");
                 sb.AppendLine("  Watched Paths:");
-                foreach (var mapping in pathMatcherOptions.Value.PathMappings)
-                {
-                    sb.AppendLine($"    {mapping.Source}");
-                }
+                sb.AppendJoin('\n', pathMatcherOptions.Value.PathMappings.Select(i => $"    {i.Source}"));
                 _debugger.WriteDebugWithoutChecking(sb.ToString());
             }
         }

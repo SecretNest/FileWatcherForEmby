@@ -53,7 +53,7 @@ internal sealed class CachedPathMatcherService : IDisposable
             sb.AppendLine($"  Cache TrackLinkedCacheEntries: {cacheOptions.Value.TrackLinkedCacheEntries}");
             sb.AppendLine($"  Cache TrackStatistics: {cacheOptions.Value.TrackStatistics}");
             sb.AppendLine($"  Entry AbsoluteExpirationRelativeToNow: {_entryOptions.AbsoluteExpirationRelativeToNow}");
-            sb.AppendLine($"  Entry SlidingExpiration: {_entryOptions.SlidingExpiration}");
+            sb.Append($"  Entry SlidingExpiration: {_entryOptions.SlidingExpiration}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }
@@ -109,10 +109,8 @@ internal sealed class CachedPathMatcherService : IDisposable
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"CachedPathMatcher: Mapped IDs for {path}:");
-            foreach (var result in results)
-            {
-                sb.AppendLine($"  ID: {result.Id}, Parent ID: {result.ParentId}, Mapped Path: {result.MappedPath}");
-            }
+            sb.AppendJoin('\n',
+                results.Select(i => $"  ID: {i.Id}, Parent ID: {i.ParentId}, Mapped Path: {i.MappedPath}"));
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
         

@@ -33,7 +33,7 @@ internal sealed class EmbyClientService
             sb.AppendLine($"  EmbyEnvironmentPathCaseSensitive: {_pathCaseSensitive}");
             sb.AppendLine($"  URL GetVirtualFolders: {_urlGetVirtualFolders}");
             sb.AppendLine($"  URL GetItemsFormat: {_urlGetItemsFormat}");
-            sb.AppendLine($"  URL RefreshFormat: {_urlRefreshFormat}");
+            sb.Append($"  URL RefreshFormat: {_urlRefreshFormat}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }
@@ -95,10 +95,8 @@ internal sealed class EmbyClientService
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine("EmbyClient: Libraries and their IDs:");
-            foreach (var kvp in locationsAndIds)
-            {
-                sb.AppendLine($"  Location: {kvp.Key}, IDs: {string.Join(", ", kvp.Value)}");
-            }
+            sb.AppendJoin('\n',
+                locationsAndIds.Select(kvp => $"  Location: {kvp.Key}, IDs: {string.Join(", ", kvp.Value)}"));
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
         
@@ -171,10 +169,8 @@ internal sealed class EmbyClientService
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"EmbyClient: Items for ParentId {parentId}:");
-            foreach (var kvp in items)
-            {
-                sb.AppendLine($"  ID: {kvp.Key}, Path: {kvp.Value.Path}, IsFolder: {kvp.Value.IsFolder}");
-            }
+            sb.AppendJoin('\n',
+                items.Select(kvp => $"  ID: {kvp.Key}, Path: {kvp.Value.Path}, IsFolder: {kvp.Value.IsFolder}"));
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
         

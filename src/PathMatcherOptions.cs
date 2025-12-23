@@ -22,10 +22,9 @@ internal sealed class PathMatcherOptions
             {
                 Source = Path.GetFullPath(mapping.Source),
                 Targets = mapping.Targets
-                    .Select(Path.GetFullPath)
                     .Distinct()
                     .ToList()
-            }).DistinctBy(i => i.Source).ToList();
+            }).DistinctBy(i => options.SourcePathCaseSensitive ? i.Source : i.Source.ToLowerInvariant()).ToList();
         }
     }
 }

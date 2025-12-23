@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Options;
+using static SecretNest.FileWatcherForEmby.LibraryPathMatcherService;
 
 namespace SecretNest.FileWatcherForEmby;
 
@@ -44,7 +45,7 @@ internal sealed class LibraryPathMatcherService
             {
                 sb.AppendLine($"    \"{mapping.Key}\" => [{string.Join(", ", mapping.Value.Select(i => $"\"{i}\""))}]");
             }
-            sb.AppendLine($"  SourcePathCaseSensitive: {options.Value.SourcePathCaseSensitive}");
+            sb.Append($"  SourcePathCaseSensitive: {options.Value.SourcePathCaseSensitive}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
     }
@@ -95,10 +96,7 @@ internal sealed class LibraryPathMatcherService
         {
             var sb = new System.Text.StringBuilder();
             sb.AppendLine($"LibraryPathMatcher: Mapped libraries for path: {path}");
-            foreach (var mappedLibrary in result)
-            {
-                sb.AppendLine($"  LibraryId: {mappedLibrary.LibraryId}, FullPath: \"{mappedLibrary.FullPath}\"");
-            }
+            sb.AppendJoin('\n', result.Select(i => $"  LibraryId: {i.LibraryId}, FullPath: \"{i.FullPath}\""));
             _debugger.WriteDebugWithoutChecking(sb.ToString());
         }
 
