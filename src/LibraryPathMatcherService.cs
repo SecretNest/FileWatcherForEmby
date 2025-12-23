@@ -16,28 +16,22 @@ internal sealed class LibraryPathMatcherService
         if (options.Value.CaseSensitive)
         {
             _comparison = StringComparison.Ordinal;
-            if (options.Value.PathMappings != null)
-                _pathMappings = new Dictionary<string, List<string>>(
-                    options.Value.PathMappings.Select(kv =>
-                        new KeyValuePair<string, List<string>>(
-                            PathHelper.NormalizePath(Path.GetFullPath(kv.Key)),
-                            kv.Value.Select(Path.GetFullPath).ToList())
-                    ));
-            else
-                _pathMappings = new Dictionary<string, List<string>>();
+            _pathMappings = new Dictionary<string, List<string>>(
+                options.Value.PathMappings.Select(mapping =>
+                    new KeyValuePair<string, List<string>>(
+                        PathHelper.NormalizePath(mapping.Source),
+                        mapping.Targets)
+                ));
         }
         else
         {
             _comparison = StringComparison.OrdinalIgnoreCase;
-            if (options.Value.PathMappings != null)
-                _pathMappings = new Dictionary<string, List<string>>(
-                    options.Value.PathMappings.Select(kv =>
-                        new KeyValuePair<string, List<string>>(
-                            PathHelper.NormalizePath(Path.GetFullPath(kv.Key)),
-                            kv.Value.Select(Path.GetFullPath).ToList())
-                    ), StringComparer.OrdinalIgnoreCase);
-            else
-                _pathMappings = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            _pathMappings = new Dictionary<string, List<string>>(
+                options.Value.PathMappings.Select(mapping =>
+                    new KeyValuePair<string, List<string>>(
+                        PathHelper.NormalizePath(mapping.Source),
+                        mapping.Targets)
+                ), StringComparer.OrdinalIgnoreCase);
         }
         
         _debugger.WriteInfo($"LibraryPathMatcher initialized.");

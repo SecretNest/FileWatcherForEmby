@@ -22,8 +22,8 @@ internal sealed class FolderWatcherService : IDisposable
         }
         else
         {
-            _watcherInstances = pathMatcherOptions.Value.PathMappings.Keys
-                .Select(path => new FolderWatcher(path, options.Value.RetryDelay))
+            _watcherInstances = pathMatcherOptions.Value.PathMappings
+                .Select(path => new FolderWatcher(path.Source, options.Value.RetryDelay))
                 .ToList();
             _watcherInstances.ForEach(watcher =>
             {
@@ -37,9 +37,9 @@ internal sealed class FolderWatcherService : IDisposable
                 sb.AppendLine("FolderWatcherService configuration:");
                 sb.AppendLine($"  RetryDelay: {options.Value.RetryDelay}");
                 sb.AppendLine("  Watched Paths:");
-                foreach (var path in pathMatcherOptions.Value.PathMappings.Keys)
+                foreach (var mapping in pathMatcherOptions.Value.PathMappings)
                 {
-                    sb.AppendLine($"    {path}");
+                    sb.AppendLine($"    {mapping.Source}");
                 }
                 _debugger.WriteDebugWithoutChecking(sb.ToString());
             }

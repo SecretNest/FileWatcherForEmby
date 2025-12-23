@@ -3,7 +3,7 @@ namespace SecretNest.FileWatcherForEmby;
 internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
     : IDisposable
 {
-    private readonly string _path = Path.GetFullPath(path);
+    private readonly string _path = path;
     private readonly TimeSpan _retryDelay = retryDelay ?? TimeSpan.FromSeconds(2);
     private readonly Lock _lock = new();
     private FileSystemWatcher? _watcher;

@@ -1,6 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.WindowsServices;
+using System;
+using Microsoft.Extensions.Options;
 
 namespace SecretNest.FileWatcherForEmby;
 
@@ -123,9 +126,10 @@ internal class Program
             Console.WriteLine($"  To start service:\t{fileName} start");
             Console.WriteLine($"  To stop service:\t{fileName} stop");
             Console.WriteLine();
-    
+
             Console.WriteLine("This application is running in console mode.");
             Console.WriteLine("Press Ctrl+C to shut down.");
+            Console.WriteLine();
             Console.WriteLine("----------------------------------------");
         }
 
@@ -138,6 +142,7 @@ internal class Program
                 services.Configure<CachedEmbyItemsCacheOptions>(context.Configuration.GetSection("cachedEmbyItemsCache"));
                 services.Configure<CachedEmbyItemsEntryOptions>(context.Configuration.GetSection("cachedEmbyItemsEntry"));
                 services.Configure<PathMatcherOptions>(context.Configuration.GetSection("pathMatcher"));
+                services.AddSingleton<IPostConfigureOptions<PathMatcherOptions>, PathMatcherOptions.PathMatcherOptionsPostConfigure>();
                 services.Configure<FolderWatcherOptions>(context.Configuration.GetSection("folderWatcher"));
                 services.Configure<CachedPathMatcherCacheOptions>(context.Configuration.GetSection("cachedPatchMatcherCache"));
                 services.Configure<CachedPathMatcherEntryOptions>(context.Configuration.GetSection("cachedPatchMatcherEntry"));

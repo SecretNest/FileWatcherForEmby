@@ -9,7 +9,7 @@ Emby DOES have a built-in file watcher to monitor folders for changes. However, 
 1. Download the latest release from the [Releases](releases/latest).
 2. Edit appsettings.json to configure:
    1. your Emby server URL ``embyBaseUrl`` and API key ``embyApiKey`` under ``embyClient`` section. ``pathIgnoreCase`` must be set to false for Linux based docker containers like Emby official docker container.
-   2. the paths you want to monitor from the Windows which runs this application as key, and the paths mounted as target in Emby docker container as values under ``pathMappings`` of ``pathMatcher`` section. Multiple paths can be monitored by adding more key-value pairs. Each key must be unique. Each key can have multiple target paths. ``caseSensitive`` must be set to false for local paths on Windows hosts.
+   2. the paths you want to monitor from the Windows which runs this application as key, and the paths mounted as target in Emby docker container as values under ``pathMappings`` of ``pathMatcher`` section. Multiple paths can be monitored by adding more ``Source``-``Targets`` pairs. Each source must be unique. Each source can have multiple target paths. ``caseSensitive`` must be set to false for local paths on Windows hosts.
    3. (optional) other settings:
       1. ``cachedEmbyLibraries`` section: ``cacheDurationInSeconds`` controls how long to cache Emby library info to reduce API calls. Default is 3600 seconds (1 hour). Set to ``0`` to let cache never expire. Set to negative value to disable caching.
       2. ``cachedEmbyItemsCache`` section: controls how many Emby items to cache in memory to reduce API calls. See [MemoryCacheOptions](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.caching.memory.memorycacheoptions) for details.
