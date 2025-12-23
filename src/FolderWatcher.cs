@@ -1,3 +1,5 @@
+using System.IO;
+
 namespace SecretNest.FileWatcherForEmby;
 
 internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
@@ -12,8 +14,9 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
     private bool _disposed;
     
     public event EventHandler<FileSystemChangedEventArgs>? FileSystemChanged;
-    
     public event EventHandler<FileSystemWatcherExceptionEventArgs>? WatcherExceptionOccurred;
+    public event EventHandler<FileSystemWatcherStartedEventArgs>? WatcherStarted;
+    
     
     public void Start()
     {
@@ -70,38 +73,39 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
                 {
                     var parent = Path.GetDirectoryName(e.FullPath);
                     if (!string.IsNullOrEmpty(parent))
-                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent));
+                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent, _path));
                 };
                 fsw.Changed += (s, e) =>
                 {
-                    FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(e.FullPath));
+                    FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(e.FullPath, _path));
                 };
                 fsw.Deleted += (s, e) =>
                 {
                     var parent = Path.GetDirectoryName(e.FullPath);
                     if (!string.IsNullOrEmpty(parent))
-                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent));
+                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent, _path));
                 };
                 fsw.Renamed += (s, e) =>
                 {
                     var oldParent = Path.GetDirectoryName(e.OldFullPath);
                     var newParent = Path.GetDirectoryName(e.FullPath);
                     if (!string.IsNullOrEmpty(oldParent))
-                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(oldParent));
+                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(oldParent, _path));
                     if (oldParent != newParent)
                     {
                         if (!string.IsNullOrEmpty(newParent))
-                            FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(newParent));
+                            FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(newParent, _path));
                     }
                 };
                 fsw.Error += (s, e) =>
                 {
                     // Root/UNC removed or fatal watcher issue
-                    WatcherExceptionOccurred?.Invoke(this, new FileSystemWatcherExceptionEventArgs(e.ToString(), e.GetException()));
+                    WatcherExceptionOccurred?.Invoke(this, new FileSystemWatcherExceptionEventArgs(_path, e.ToString(), e.GetException()));
                     HandleWatcherFailure();
                 };
                 fsw.EnableRaisingEvents = true;
                 _watcher = fsw;
+                WatcherStarted?.Invoke(this, new FileSystemWatcherStartedEventArgs(_path));
             }
             catch
             {
@@ -171,13 +175,20 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
     }
 }
 
-internal sealed class FileSystemChangedEventArgs(string path) : EventArgs
+internal sealed class FileSystemChangedEventArgs(string path, string watchingPath) : EventArgs
 {
     public readonly string Path = path;
+    public readonly string WatchingPath = watchingPath;
 }
 
-internal sealed class FileSystemWatcherExceptionEventArgs(string? message, Exception? innerException = null) : EventArgs
+internal sealed class FileSystemWatcherExceptionEventArgs(string watchingPath, string? message, Exception? innerException = null) : EventArgs
 {
+    public readonly string WatchingPath = watchingPath;
     public readonly string? Message = message;
     public readonly Exception? InnerException = innerException;
+}
+
+internal sealed class FileSystemWatcherStartedEventArgs(string watchingPath) : EventArgs
+{
+    public readonly string WatchingPath = watchingPath;
 }

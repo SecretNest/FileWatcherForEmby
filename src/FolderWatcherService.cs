@@ -29,6 +29,7 @@ internal sealed class FolderWatcherService : IDisposable
             {
                 watcher.FileSystemChanged += OnFileSystemChanged;
                 watcher.WatcherExceptionOccurred += OnWatcherExceptionOccurred;
+                watcher.WatcherStarted += OnWatcherStarted;
             });
             _debugger.WriteInfo($"FolderWatcherService initialized.");
             if (_debugger.IsDebugMode)
@@ -53,14 +54,19 @@ internal sealed class FolderWatcherService : IDisposable
 
     private void OnFileSystemChanged(object? sender, FileSystemChangedEventArgs e)
     {
-        _debugger.WriteInfo($"FolderWatcherService: File system change detected. Need refresh on \"{e.Path}\".");
+        _debugger.WriteInfo($"FolderWatcherService: File system change detected under \"{e.WatchingPath}\". Need refresh on \"{e.Path}\".");
         
         FileSystemChanged?.Invoke(this, e);
     }
     
     private void OnWatcherExceptionOccurred(object? sender, FileSystemWatcherExceptionEventArgs e)
     {
-        _debugger.WriteError($"FolderWatcherService: File system watcher exception occurred. Message: {e.Message}. Exception: {e.InnerException}");
+        _debugger.WriteError($"FolderWatcherService: File system watcher on \"{e.WatchingPath}\" exception occurred. Message: {e.Message}. Exception: {e.InnerException}");
+    }
+
+    private void OnWatcherStarted(object? sender, FileSystemWatcherStartedEventArgs e)
+    {
+        _debugger.WriteDebug($"FolderWatcherService: File system watcher started on \"{e.WatchingPath}\".");
     }
 
     public void Dispose()
