@@ -48,7 +48,7 @@ internal sealed class LibraryPathMatcherService
             sb.AppendLine("  Path Mappings:");
             foreach (var mapping in _pathMappings)
             {
-                sb.AppendLine($"    \"{mapping.Key}\" => [{string.Join(", ", "\"" + mapping.Value) + "\""}]");
+                sb.AppendLine($"    \"{mapping.Key}\" => [{string.Join(", ", mapping.Value.Select(i => $"\"{i}\""))}]");
             }
             sb.AppendLine($"  CaseSensitive: {options.Value.CaseSensitive}");
             _debugger.WriteDebugWithoutChecking(sb.ToString());
