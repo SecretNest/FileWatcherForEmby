@@ -111,7 +111,7 @@ jobs:
           TAG: ${{ needs.precheck.outputs.version }}
         run: |
           set -euo pipefail
-          ls -la dist || true
           gh release create "${TAG}" dist/**/FileWatcherForEmby-*.zip \
+            --repo "${GITHUB_REPOSITORY}" \
             --title "${TAG}" \
             --notes "Automated release ${TAG}"
