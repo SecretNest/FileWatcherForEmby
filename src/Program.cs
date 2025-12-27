@@ -52,7 +52,7 @@ internal class Program
                         {
                             Console.WriteLine("Service installed successfully.");
                             Console.WriteLine("NOTE: Run again with argument \"start\" to start the service.");
-                            Console.WriteLine("NOTE: If the folders for watching need authentication, switch the service account to an account with the necessary permissions before starting the service.");
+                            Console.WriteLine("NOTE: Make sure the service account has access to the folders being monitored.");
                             return 0;
                         }
                     }

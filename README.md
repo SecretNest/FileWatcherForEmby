@@ -25,3 +25,6 @@ Emby DOES have a built-in file watcher to monitor folders for changes. However, 
    2. ``uninstall``: to uninstall the Windows Service.
    3. ``start``: to start the Windows Service.
    4. ``stop``: to stop the Windows Service.
+
+### NOTE
+For Windows Server mode, make sure the service account has access to the folders being monitored.
