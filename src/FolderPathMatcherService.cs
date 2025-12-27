@@ -50,7 +50,7 @@ internal sealed class FolderPathMatcherService
         while (searchingIds.Count > 0)
         {
             var searchingId = searchingIds.Dequeue();
-            _debugger.WriteDebug($"FolderPathMatcher: Searching path '{mappedFullPath}' under item ID {searchingId}.");
+            _debugger.WriteDebug($"FolderPathMatcher: Searching path '{mappedFullPath}' under item ID {searchingId.SearchId}.");
             
             var subNodes = await _cachedEmbyItemsService.GetItemsAsync(searchingId.SearchId, cancellationToken);
             if (subNodes is null) continue;
@@ -66,7 +66,7 @@ internal sealed class FolderPathMatcherService
                 }
                 else if (string.Equals(mappedFullPathWithTail, subNode.Value.Path, _comparison))
                 {
-                    _debugger.WriteInfo($"FolderPathMatcher: Exact match found for path '{mappedFullPath}' at item ID {subNode.Key}, parent ID {searchingId}.");
+                    _debugger.WriteInfo($"FolderPathMatcher: Exact match found for path '{mappedFullPath}' at item ID {subNode.Key}, parent ID {searchingId.SearchId}.");
                     //exact item found
                     return new MappedItem
                     {
