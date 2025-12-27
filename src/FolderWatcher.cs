@@ -2,10 +2,9 @@ using System.IO;
 
 namespace SecretNest.FileWatcherForEmby;
 
-internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
+internal sealed class FolderWatcher(string path, HashSet<string> ignoredExtensions, bool caseSensitive, TimeSpan? retryDelay = null)
     : IDisposable
 {
-    private readonly string _path = path;
     private readonly TimeSpan _retryDelay = retryDelay ?? TimeSpan.FromSeconds(2);
     private readonly Lock _lock = new();
     private FileSystemWatcher? _watcher;
@@ -43,7 +42,7 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
     {
         if (_disposed)
             return;
-        if (Directory.Exists(_path))
+        if (Directory.Exists(path))
         {
             TryCreateWatcher();
         }
@@ -61,8 +60,9 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
                 return;
             try
             {
-                var fsw = new FileSystemWatcher(_path)
+                var fsw = new FileSystemWatcher(path)
                 {
+                    IncludeSubdirectories = true,
                     NotifyFilter =
                         NotifyFilters.FileName |
                         NotifyFilters.DirectoryName |
@@ -71,41 +71,76 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
                 };
                 fsw.Created += (s, e) =>
                 {
+                    if (ignoredExtensions.Count > 0 && File.Exists(e.FullPath))
+                    {
+                        var extension = Path.GetExtension(e.FullPath);
+                        if (ignoredExtensions.Contains(extension)) return;
+                    }
                     var parent = Path.GetDirectoryName(e.FullPath);
                     if (!string.IsNullOrEmpty(parent))
-                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent, _path));
+                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent, path));
                 };
                 fsw.Changed += (s, e) =>
                 {
-                    FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(e.FullPath, _path));
+                    if (ignoredExtensions.Count > 0 && File.Exists(e.FullPath))
+                    {
+                        var extension = Path.GetExtension(e.FullPath);
+                        if (ignoredExtensions.Contains(extension)) return;
+                    }
+                    FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(e.FullPath, path));
                 };
                 fsw.Deleted += (s, e) =>
                 {
+                    if (ignoredExtensions.Count > 0 && File.Exists(e.FullPath))
+                    {
+                        var extension = Path.GetExtension(e.FullPath);
+                        if (ignoredExtensions.Contains(extension)) return;
+                    }
                     var parent = Path.GetDirectoryName(e.FullPath);
                     if (!string.IsNullOrEmpty(parent))
-                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent, _path));
+                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(parent, path));
                 };
                 fsw.Renamed += (s, e) =>
                 {
                     var oldParent = Path.GetDirectoryName(e.OldFullPath);
                     var newParent = Path.GetDirectoryName(e.FullPath);
-                    if (!string.IsNullOrEmpty(oldParent))
-                        FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(oldParent, _path));
+
                     if (oldParent != newParent)
                     {
-                        if (!string.IsNullOrEmpty(newParent))
-                            FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(newParent, _path));
+                        //notify old name
+                        if (!string.IsNullOrEmpty(oldParent) &&
+                            ignoredExtensions.Count > 0 && File.Exists(e.OldFullPath) &&
+                            e.OldFullPath.StartsWith(path, !caseSensitive, null))
+                        {
+                            var extension = Path.GetExtension(e.OldFullPath);
+                            if (!ignoredExtensions.Contains(extension))
+                            {
+                                FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(oldParent, path));
+                            }
+                        }
+                    }
+
+                    //notify new name
+                    if (!string.IsNullOrEmpty(newParent) &&
+                        ignoredExtensions.Count > 0 && File.Exists(e.FullPath) &&
+                        e.FullPath.StartsWith(path, !caseSensitive, null))
+                    {
+                        var extension = Path.GetExtension(e.FullPath);
+                        if (!ignoredExtensions.Contains(extension))
+                        {
+                            FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(newParent, path));
+                        }
                     }
                 };
                 fsw.Error += (s, e) =>
                 {
                     // Root/UNC removed or fatal watcher issue
-                    WatcherExceptionOccurred?.Invoke(this, new FileSystemWatcherExceptionEventArgs(_path, e.ToString(), e.GetException()));
+                    WatcherExceptionOccurred?.Invoke(this, new FileSystemWatcherExceptionEventArgs(path, e.ToString(), e.GetException()));
                     HandleWatcherFailure();
                 };
                 fsw.EnableRaisingEvents = true;
                 _watcher = fsw;
-                WatcherStarted?.Invoke(this, new FileSystemWatcherStartedEventArgs(_path));
+                WatcherStarted?.Invoke(this, new FileSystemWatcherStartedEventArgs(path));
             }
             catch
             {
@@ -135,7 +170,7 @@ internal sealed class FolderWatcher(string path, TimeSpan? retryDelay = null)
                 {
                     try
                     {
-                        if (Directory.Exists(_path))
+                        if (Directory.Exists(path))
                         {
                             lock (_lock)
                             {

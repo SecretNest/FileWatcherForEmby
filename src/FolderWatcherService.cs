@@ -15,15 +15,34 @@ internal sealed class FolderWatcherService : IDisposable
     {
         _debugger = debugger;
         
-        if (pathMatcherOptions.Value.PathMappings == null || pathMatcherOptions.Value.PathMappings.Count == 0)
+        if (pathMatcherOptions.Value.PathMappings.Count == 0)
         {
             _debugger.WriteInfo("FolderWatcherService initialized with no paths to watch.");
             _watcherInstances = new List<FolderWatcher>();
         }
         else
         {
+            var ignoredExtensions = new HashSet<string>(
+                pathMatcherOptions.Value.SourcePathCaseSensitive
+                    ? StringComparer.Ordinal
+                    : StringComparer.OrdinalIgnoreCase);
+            if (options.Value.IgnoredExtensions != null)
+            {
+                foreach (var extension in options.Value.IgnoredExtensions)
+                {
+                    if (!extension.StartsWith("."))
+                    {
+                        ignoredExtensions.Add("." + extension);
+                    }
+                    else
+                    {
+                        ignoredExtensions.Add(extension);
+                    }
+                }
+            }
+
             _watcherInstances = pathMatcherOptions.Value.PathMappings
-                .Select(path => new FolderWatcher(path.Source, options.Value.RetryDelay))
+                .Select(path => new FolderWatcher(path.Source, ignoredExtensions, pathMatcherOptions.Value.SourcePathCaseSensitive, options.Value.RetryDelay))
                 .ToList();
             _watcherInstances.ForEach(watcher =>
             {
