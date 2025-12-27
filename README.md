@@ -27,4 +27,4 @@ Emby DOES have a built-in file watcher to monitor folders for changes. However, 
    4. ``stop``: to stop the Windows Service.
 
 ### NOTE
-For Windows Server mode, make sure the service account has access to the folders being monitored.
+For Windows Service mode, make sure the service account has access to the folders being monitored.
