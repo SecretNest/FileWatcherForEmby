@@ -1,0 +1,66 @@
+name: Build & Release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Read AssemblyVersion from csproj
+        id: ver
+        shell: pwsh
+        run: |
+          $csproj = "src/FileWatcherForEmby.csproj"
+          if (!(Test-Path $csproj)) { throw "Not found: $csproj" }
+          [xml]$xml = Get-Content $csproj
+          $version = @($xml.Project.PropertyGroup.AssemblyVersion | Where-Object { $_ -and $_.Trim() -ne "" })[0]
+          if (-not $version) { throw "AssemblyVersion not found in $csproj" }
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+          Write-Host "AssemblyVersion=$version"
+      - name: Fail if GitHub Release already exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh api -H "Accept: application/vnd.github+json" "/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Release with tag '${TAG}' already exists. Abort."
+            exit 1
+          fi
+          echo "Release tag '${TAG}' does not exist. Continue."
+      - name: Setup .NET (net10)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Restore
+        run: dotnet restore src/FileWatcherForEmby.csproj
+      - name: Publish (Release)
+        run: |
+          dotnet publish src/FileWatcherForEmby.csproj \
+            -c Release \
+            -f net10.0 \
+            -o out
+      - name: Delete PDB files
+        run: |
+          set -euo pipefail
+          find out -type f -name "*.pdb" -delete
+      - name: Create zip package
+        env:
+          TAG: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd out
+          zip -r "../FileWatcherForEmby-${TAG}.zip" .
+          cd ..
+      - name: Create GitHub Release and upload asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "${TAG}" "FileWatcherForEmby-${TAG}.zip" \
+            --title "${TAG}" \
+            --notes "Automated release ${TAG}"
