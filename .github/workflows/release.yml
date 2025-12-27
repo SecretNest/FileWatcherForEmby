@@ -1,14 +1,16 @@
-name: Build & Release
+name: Build & Release (x64+arm64, FD + SelfContained SingleFile)
 on:
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  build_release:
+  precheck:
+    name: Read version & check release exists
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Read AssemblyVersion from csproj
         id: ver
         shell: pwsh
@@ -26,41 +28,90 @@ jobs:
           TAG: ${{ steps.ver.outputs.version }}
         run: |
           set -euo pipefail
-          if gh api -H "Accept: application/vnd.github+json" "/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" >/dev/null 2>&1; then
+          if gh api "/repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" >/dev/null 2>&1; then
             echo "Release with tag '${TAG}' already exists. Abort."
             exit 1
           fi
           echo "Release tag '${TAG}' does not exist. Continue."
+  build:
+    name: Build zips (${{ matrix.rid }} / ${{ matrix.flavor }})
+    needs: precheck
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rid: [win-x64, win-arm64]
+        flavor: [fd, sc-singlefile]
+    steps:
+      - uses: actions/checkout@v4
       - name: Setup .NET (net10)
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+          # 若你使用 net10 预览版 SDK，可启用：
+          # include-prerelease: true
       - name: Restore
         run: dotnet restore src/FileWatcherForEmby.csproj
-      - name: Publish (Release)
+      - name: Publish
+        shell: pwsh
         run: |
-          dotnet publish src/FileWatcherForEmby.csproj \
-            -c Release \
-            -f net10.0 \
-            -o out
+          $rid = "${{ matrix.rid }}"
+          $flavor = "${{ matrix.flavor }}"
+          $outDir = "out\$flavor-$rid"
+          if ($flavor -eq "fd") {
+            dotnet publish src/FileWatcherForEmby.csproj `
+              -c Release -f net10.0 -r $rid `
+              --self-contained false `
+              -o $outDir
+          } else {
+            dotnet publish src/FileWatcherForEmby.csproj `
+              -c Release -f net10.0 -r $rid `
+              --self-contained true `
+              -p:PublishSingleFile=true `
+              -p:IncludeNativeLibrariesForSelfExtract=true `
+              -o $outDir
+          }
       - name: Delete PDB files
+        shell: pwsh
         run: |
-          set -euo pipefail
-          find out -type f -name "*.pdb" -delete
-      - name: Create zip package
+          Get-ChildItem -Path out -Recurse -Filter *.pdb | Remove-Item -Force
+      - name: Create zip
+        shell: pwsh
         env:
-          TAG: ${{ steps.ver.outputs.version }}
+          TAG: ${{ needs.precheck.outputs.version }}
         run: |
-          set -euo pipefail
-          cd out
-          zip -r "../FileWatcherForEmby-${TAG}.zip" .
-          cd ..
-      - name: Create GitHub Release and upload asset
+          $rid = "${{ matrix.rid }}"
+          $flavor = "${{ matrix.flavor }}"
+          $src = "out\$flavor-$rid\*"
+          $zipName = if ($flavor -eq "fd") {
+            "FileWatcherForEmby-$env:TAG-$rid-framework-dependent.zip"
+          } else {
+            "FileWatcherForEmby-$env:TAG-$rid-self-contained-singlefile.zip"
+          }
+          if (Test-Path $zipName) { Remove-Item $zipName -Force }
+          Compress-Archive -Path $src -DestinationPath $zipName
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.flavor }}-${{ matrix.rid }}
+          path: |
+            FileWatcherForEmby-*.zip
+  release:
+    name: Create GitHub Release
+    needs: [precheck, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+      - name: Create Release and upload assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.ver.outputs.version }}
+          TAG: ${{ needs.precheck.outputs.version }}
         run: |
           set -euo pipefail
-          gh release create "${TAG}" "FileWatcherForEmby-${TAG}.zip" \
+          ls -la dist || true
+          gh release create "${TAG}" dist/**/FileWatcherForEmby-*.zip \
             --title "${TAG}" \
             --notes "Automated release ${TAG}"
