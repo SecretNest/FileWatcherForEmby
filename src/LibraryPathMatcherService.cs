@@ -20,7 +20,7 @@ internal sealed class LibraryPathMatcherService
             _pathMappings = new Dictionary<string, List<string>>(
                 options.Value.PathMappings.Select(mapping =>
                     new KeyValuePair<string, List<string>>(
-                        PathHelper.NormalizePath(mapping.Source),
+                        PathHelper.NormalizeWindowsPath(Path.GetFullPath(mapping.Source)),
                         mapping.Targets)
                 ));
         }
@@ -30,7 +30,7 @@ internal sealed class LibraryPathMatcherService
             _pathMappings = new Dictionary<string, List<string>>(
                 options.Value.PathMappings.Select(mapping =>
                     new KeyValuePair<string, List<string>>(
-                        PathHelper.NormalizePath(mapping.Source),
+                        PathHelper.NormalizeWindowsPath(Path.GetFullPath(mapping.Source)),
                         mapping.Targets)
                 ), StringComparer.OrdinalIgnoreCase);
         }
@@ -66,8 +66,8 @@ internal sealed class LibraryPathMatcherService
         {
             var subPath = PathHelper.GetSubPath(mapping.Key, path, _comparison);
             if (subPath == null) continue;
-            mappedPaths.AddRange(mapping.Value.Select(mappedPath => Path.Combine(mappedPath, 
-                subPath.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))));
+            mappedPaths.AddRange(mapping.Value.Select(mappedPath => 
+                Path.Combine(mappedPath, subPath).Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)));
         }
 
         var pathAndParentIds = await _cachedEmbyLibrariesService.GetLibrariesAsync(cancellationToken);

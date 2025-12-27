@@ -71,9 +71,9 @@ internal sealed class FolderWatcher(string path, HashSet<string> ignoredExtensio
                 };
                 fsw.Created += (s, e) =>
                 {
-                    if (ignoredExtensions.Count > 0 && File.Exists(e.FullPath))
+                    if (ignoredExtensions.Count > 0)
                     {
-                        var extension = Path.GetExtension(e.FullPath);
+                        var extension = Path.GetExtension(e.FullPath) ?? ".";
                         if (ignoredExtensions.Contains(extension)) return;
                     }
                     var parent = Path.GetDirectoryName(e.FullPath);
@@ -82,18 +82,18 @@ internal sealed class FolderWatcher(string path, HashSet<string> ignoredExtensio
                 };
                 fsw.Changed += (s, e) =>
                 {
-                    if (ignoredExtensions.Count > 0 && File.Exists(e.FullPath))
+                    if (ignoredExtensions.Count > 0)
                     {
-                        var extension = Path.GetExtension(e.FullPath);
+                        var extension = Path.GetExtension(e.FullPath) ?? ".";
                         if (ignoredExtensions.Contains(extension)) return;
                     }
                     FileSystemChanged?.Invoke(this, new FileSystemChangedEventArgs(e.FullPath, path));
                 };
                 fsw.Deleted += (s, e) =>
                 {
-                    if (ignoredExtensions.Count > 0 && File.Exists(e.FullPath))
+                    if (ignoredExtensions.Count > 0)
                     {
-                        var extension = Path.GetExtension(e.FullPath);
+                        var extension = Path.GetExtension(e.FullPath) ?? ".";
                         if (ignoredExtensions.Contains(extension)) return;
                     }
                     var parent = Path.GetDirectoryName(e.FullPath);
@@ -109,7 +109,7 @@ internal sealed class FolderWatcher(string path, HashSet<string> ignoredExtensio
                     {
                         //notify old name
                         if (!string.IsNullOrEmpty(oldParent) &&
-                            ignoredExtensions.Count > 0 && File.Exists(e.OldFullPath) &&
+                            ignoredExtensions.Count > 0 &&
                             e.OldFullPath.StartsWith(path, !caseSensitive, null))
                         {
                             var extension = Path.GetExtension(e.OldFullPath);
@@ -122,7 +122,7 @@ internal sealed class FolderWatcher(string path, HashSet<string> ignoredExtensio
 
                     //notify new name
                     if (!string.IsNullOrEmpty(newParent) &&
-                        ignoredExtensions.Count > 0 && File.Exists(e.FullPath) &&
+                        ignoredExtensions.Count > 0 &&
                         e.FullPath.StartsWith(path, !caseSensitive, null))
                     {
                         var extension = Path.GetExtension(e.FullPath);

@@ -30,11 +30,19 @@ internal sealed class FolderPathMatcherService
         public required int ParentId { get; init; }
         public required string MappedPath { get; init; }
     }
-    
+
+    struct SearchingItem
+    {
+        public int SearchId;
+        public int RefreshableId;
+    }
+
     public async Task<MappedItem?> GetMappedItemAsync(int libraryId, string mappedFullPath, CancellationToken cancellationToken = default)
     {
         _debugger.WriteInfo($"FolderPathMatcher: Start matching path '{mappedFullPath}' under library ID {libraryId}.");
-        var searchingIds = new Queue<int>(libraryId);
+        var mappedFullPathWithTail = mappedFullPath + System.IO.Path.AltDirectorySeparatorChar;
+        var searchingIds = new Queue<SearchingItem>();
+        searchingIds.Enqueue(new SearchingItem() { SearchId = libraryId, RefreshableId = libraryId });
         
         int? proximalMatchedId = null;
         string? proximalMatchedPath = null;
@@ -44,7 +52,7 @@ internal sealed class FolderPathMatcherService
             var searchingId = searchingIds.Dequeue();
             _debugger.WriteDebug($"FolderPathMatcher: Searching path '{mappedFullPath}' under item ID {searchingId}.");
             
-            var subNodes = await _cachedEmbyItemsService.GetItemsAsync(searchingId, cancellationToken);
+            var subNodes = await _cachedEmbyItemsService.GetItemsAsync(searchingId.SearchId, cancellationToken);
             if (subNodes is null) continue;
 
             foreach (var subNode in subNodes)
@@ -52,30 +60,32 @@ internal sealed class FolderPathMatcherService
                 if (string.IsNullOrEmpty(subNode.Value.Path))
                 {
                     _debugger.WriteDebug($"FolderPathMatcher: Item ID {subNode.Key} has no path, checking its children is required.");
-                    //node without path, need to check its children
-                    searchingIds.Enqueue(subNode.Key);
+                    //node without path, need to check its children. And this node cannot be the target for refreshing.
+                    searchingIds.Enqueue(new SearchingItem()
+                        { SearchId = subNode.Key, RefreshableId = searchingId.RefreshableId });
                 }
-                else if (string.Equals(mappedFullPath, subNode.Value.Path, _comparison))
+                else if (string.Equals(mappedFullPathWithTail, subNode.Value.Path, _comparison))
                 {
                     _debugger.WriteInfo($"FolderPathMatcher: Exact match found for path '{mappedFullPath}' at item ID {subNode.Key}, parent ID {searchingId}.");
                     //exact item found
                     return new MappedItem
                     {
                         Id = subNode.Key,
-                        ParentId = searchingId,
+                        ParentId = searchingId.RefreshableId,
                         MappedPath = subNode.Value.Path
                     };
                 }
-                else if (string.Equals(subNode.Value.Path, mappedFullPath, _comparison))
+                else if (mappedFullPath.StartsWith(subNode.Value.Path, _comparison))
                 {
                     _debugger.WriteDebug($"FolderPathMatcher: Proximal match found for path '{mappedFullPath}' at item ID {subNode.Key}.");
                     //proximal item found
                     proximalMatchedId = subNode.Key;
                     proximalMatchedPath = subNode.Value.Path;
-                    parentOfProximalMatchedId = searchingId;
+                    parentOfProximalMatchedId = searchingId.RefreshableId;
                     searchingIds.Clear();
                     searchingIds.TrimExcess();
-                    searchingIds.Enqueue(subNode.Key);
+                    searchingIds.Enqueue(new SearchingItem() { SearchId = subNode.Key, RefreshableId = subNode.Key });
+                    break;
                 }
             }
         }

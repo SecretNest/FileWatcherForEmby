@@ -21,7 +21,7 @@ internal sealed class EmbyClientService
         
         _urlGetVirtualFolders = $"{embyBaseUrl}Library/VirtualFolders?api_key={options.Value.EmbyApiKey}";
         _urlGetItemsFormat = $"{embyBaseUrl}Items?ParentId={{0}}&Fields=Path&api_key={options.Value.EmbyApiKey}";
-        _urlRefreshFormat = $"{embyBaseUrl}Items/{{0}}/Refresh?&api_key={options.Value.EmbyApiKey}";
+        _urlRefreshFormat = $"{embyBaseUrl}Items/{{0}}/Refresh?&Recursive=true&api_key={options.Value.EmbyApiKey}";
 
         _debugger.WriteInfo("EmbyClient initialized.");
         if (_debugger.IsDebugMode)
@@ -70,7 +70,8 @@ internal sealed class EmbyClientService
         foreach (var libraryElement in json.EnumerateArray())
         {
             if (!libraryElement.TryGetProperty("Id", out var idElement)) continue;
-            if (!idElement.TryGetInt32(out var id)) continue; 
+            var idString = idElement.GetString();
+            if (!int.TryParse(idString, out var id)) continue;
 
             if (!libraryElement.TryGetProperty("Locations", out var locationsElement)) continue;
             if (locationsElement.ValueKind != JsonValueKind.Array) continue;
@@ -78,7 +79,7 @@ internal sealed class EmbyClientService
             {
                 var location = locationElement.GetString();
                 if (string.IsNullOrEmpty(location)) continue;
-                location = PathHelper.NormalizePath(Path.GetFullPath(location)); //Tail added
+                location = PathHelper.NormalizeLinuxPath(location); //Tail added
                 if (!locationsAndIds.TryGetValue(location, out var idList))
                 {
                     idList = [id];
@@ -138,18 +139,19 @@ internal sealed class EmbyClientService
         var json = JsonDocument.Parse(content).RootElement;
         _debugger.WriteInfo($"EmbyClient: Successfully retrieved items for ParentId {parentId}.");
         var items = new Dictionary<int, EmbyItem>();
-        if (!json.TryGetProperty("TotalRecordCount", out var totalRecordCountElement)) return null;
+        if (!json.TryGetProperty("Items", out var totalRecordCountElement)) return null;
         if (totalRecordCountElement.ValueKind != JsonValueKind.Array) return null;
         foreach (var itemElement in totalRecordCountElement.EnumerateArray())
         {
             if (!itemElement.TryGetProperty("Id", out var idElement)) continue;
-            if (!idElement.TryGetInt32(out var id)) continue; 
-            
+            var idString = idElement.GetString();
+            if (!int.TryParse(idString, out var id)) continue;
+
             //Path may be missing
             string? path = null;
             if (itemElement.TryGetProperty("Path", out var pathElement))
             {
-                path = PathHelper.NormalizePath(pathElement.GetString()!); //Tail added
+                path = PathHelper.NormalizeLinuxPath(pathElement.GetString()!); //Tail added
             }
             
             //IsFolder may be missing
@@ -182,9 +184,9 @@ internal sealed class EmbyClientService
         using var httpClient = new HttpClient();
 
         var url = string.Format(_urlRefreshFormat, itemId);
-        _debugger.WriteDebug($"EmbyClient: GET {url}");
+        _debugger.WriteDebug($"EmbyClient: POST {url}");
         
-        var responseMessage = await httpClient.GetAsync(url, cancellationToken);
+        var responseMessage = await httpClient.PostAsync(url, null, cancellationToken);
         if (!responseMessage.IsSuccessStatusCode)
         {
             _debugger.WriteWarning($"EmbyClient: Failed to refresh item {itemId}. Status code: {responseMessage.StatusCode}.");

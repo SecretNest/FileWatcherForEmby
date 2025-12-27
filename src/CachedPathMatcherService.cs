@@ -87,15 +87,15 @@ internal sealed class CachedPathMatcherService : IDisposable
         var results = new List<FolderPathMatcherService.MappedItem>();
         foreach(var library in libraries)
         {
-            var item = await _folderPathMatcherService.GetMappedItemAsync(library.LibraryId, path, cancellationToken);
+            var item = await _folderPathMatcherService.GetMappedItemAsync(library.LibraryId, library.FullPath, cancellationToken);
             if (item != null)
             {
-                _debugger.WriteDebug($"CachedPathMatcher: Mapped item found in library {library.LibraryId} for path {path}: Item ID: {item.Id}, Path: {item.MappedPath}");
+                _debugger.WriteDebug($"CachedPathMatcher: Mapped item found in library {library.LibraryId} for path {library.FullPath}: Item ID: {item.Id}, Path: {item.MappedPath}");
                 results.Add(item);
             }
             else
             {
-                _debugger.WriteWarning($"CachedPathMatcher: No mapped item found in library {library.LibraryId} for path {path}.");
+                _debugger.WriteWarning($"CachedPathMatcher: No mapped item found in library {library.LibraryId} for path {library.FullPath}.");
             }
         }
         if (results.Count == 0)

@@ -2,7 +2,7 @@ namespace SecretNest.FileWatcherForEmby;
 
 internal static class PathHelper
 {
-    internal static string NormalizePath(string path) //always ensure ends with directory separator, no matter it's a file or directory
+    internal static string NormalizeWindowsPath(string path) //always ensure ends with directory separator, no matter it's a file or directory
     {
         path = path.TrimEnd(
             Path.DirectorySeparatorChar,
@@ -10,7 +10,16 @@ internal static class PathHelper
         );
         return path + Path.DirectorySeparatorChar;
     }
-    
+
+    internal static string NormalizeLinuxPath(string path) //always ensure ends with directory separator, no matter it's a file or directory
+    {
+        path = path.TrimEnd(
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar
+        );
+        return path + Path.AltDirectorySeparatorChar;
+    }
+
     internal static bool IsSubPath(string shortPath, string longPath, StringComparison stringComparison)
     {
         try
