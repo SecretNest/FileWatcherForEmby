@@ -7,7 +7,7 @@ Emby DOES have a built-in file watcher to monitor folders for changes. However, 
 ## Use
 
 1. Download the latest release from the [Releases](releases/latest). Or, build it yourself with source code.
-   1. The ``framework-dependent`` version need ``.net 10 runtime``. You can download it [here](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). ``Desktop`` support is NOT necessary by this application.
+   1. The ``framework-dependent`` version need ``.net 10 runtime``. You can download it [here](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). ``Desktop`` support is NOT necessary for this application.
    2. The ``self-contained-singlefile`` version can be run without runtime installed.
 2. Edit appsettings.json to configure:
    1. your Emby server URL ``embyBaseUrl`` and API key ``embyApiKey`` under ``embyClient`` section. ``EmbyEnvironmentPathCaseSensitive`` must be set to true for Linux based docker containers like Emby official docker container.
